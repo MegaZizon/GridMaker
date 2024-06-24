@@ -1,0 +1,10 @@
+C:\Users\zee\source\repos\GridMakerProject\GridMakerProject\bin\Debug\GridMakerProject.exe.config
+C:\Users\zee\source\repos\GridMakerProject\GridMakerProject\bin\Debug\GridMakerProject.exe
+C:\Users\zee\source\repos\GridMakerProject\GridMakerProject\bin\Debug\GridMakerProject.pdb
+C:\Users\zee\source\repos\GridMakerProject\GridMakerProject\obj\Debug\GridMakerProject.csproj.AssemblyReference.cache
+C:\Users\zee\source\repos\GridMakerProject\GridMakerProject\obj\Debug\GridMakerProject.Properties.Resources.resources
+C:\Users\zee\source\repos\GridMakerProject\GridMakerProject\obj\Debug\GridMakerProject.csproj.GenerateResource.cache
+C:\Users\zee\source\repos\GridMakerProject\GridMakerProject\obj\Debug\GridMakerProject.csproj.CoreCompileInputs.cache
+C:\Users\zee\source\repos\GridMakerProject\GridMakerProject\obj\Debug\GridMakerProject.exe
+C:\Users\zee\source\repos\GridMakerProject\GridMakerProject\obj\Debug\GridMakerProject.pdb
+C:\Users\zee\source\repos\GridMakerProject\GridMakerProject\obj\Debug\GridMakerProject.Form1.resources
