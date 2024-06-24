@@ -24,7 +24,7 @@ namespace GridMakerProject
         public Form1()
         {
             InitializeComponent();
-            drawer = new GridDrawer(pictureBox1);
+            drawer = new GridDrawer();
             InitializeAlignButtons();
         }
         
@@ -61,7 +61,7 @@ namespace GridMakerProject
              * 함수를 처음 호출할때는 있어야할 이유가 없지만, 새로운 그리드를 그리고 싶을 때 이 동작이 없다면 
              * 이전에 그려진 그리드도 중복되어 같이 그려지게 됩니다.
              * 따라서 이벤트를 삭제해주어야 합니다. */
-            pictureBox1.Paint += new PaintEventHandler((s, e) => drawer.DrawGrid(e, gridType));
+            pictureBox1.Paint += new PaintEventHandler((s, e) => drawer.DrawGrid(e, gridType,this.pictureBox1));
             /* 사용자가 입력한 gridType에 맞는 그리드를 그려주는 함수를 pictureBox.paint 이벤트에 등록해줍니다. 
              * pictureBox가 Refresh() 될때마다 drawer클래스의 DrawGrid() 함수가 실행되어 그리드를 그리도록 하는 역할을 합니다. 
              * 예를들어 윈도우창 크기를 변경했을때도 paint 이벤트가 발생하여 그리드를 유지해주는 역할을 합니다. */
@@ -83,7 +83,6 @@ namespace GridMakerProject
 
         private bool isValidData(GridType gridType, Align align) // 유효한 데이터가 올바르게 입력되었는지 확인하는 함수
         {
-
             if (int.TryParse(textBox1.Text, out int rows) && int.TryParse(textBox2.Text, out int columns)
                 && float.TryParse(numericUpDown1.Value.ToString(), out float lineWeight)
                 && float.TryParse(numericUpDown2.Value.ToString(), out float lineOpacity))
@@ -219,8 +218,14 @@ namespace GridMakerProject
 
                 if (saveFileDialog.ShowDialog() == DialogResult.OK)
                 {
+                    PictureBox saveBox = new PictureBox();
+                    saveBox.Image = pictureBox1.Image;
+                    saveBox.SizeMode = PictureBoxSizeMode.AutoSize;
+                    this.Controls.Add(saveBox);
                     string filePath = saveFileDialog.FileName;
-                    drawer.CaptureGrid(filePath);
+                    drawer.CaptureGrid(filePath, saveBox, pictureBox1);
+                    this.Controls.Remove(saveBox);
+                    pictureBox1.Refresh();
                     MessageBox.Show($"이미지가 {filePath}에 저장되었습니다.", "저장 완료");
                 }
             }
@@ -280,7 +285,7 @@ namespace GridMakerProject
             
             if (e.Button == MouseButtons.Left)
             {
-                drawer.Drag(e.Location);
+                drawer.Drag(e.Location,this.pictureBox1);
             }
         }
         
@@ -294,7 +299,7 @@ namespace GridMakerProject
 
             if (int.TryParse(textBox1.Text,out int rows))
             {
-                drawer.setImageOffset();
+                drawer.setImageOffset(this.pictureBox1);
                 int newCols = drawer.CalculateColumnsForRows(rows);
                 textBox2.Text = newCols.ToString();
                 DrawGrid(GridType.Squares, Align.Center);
@@ -313,7 +318,7 @@ namespace GridMakerProject
 
             if (int.TryParse(textBox2.Text, out int cols))
             {
-                drawer.setImageOffset();
+                drawer.setImageOffset(this.pictureBox1);
                 int newRows = drawer.CalculateRowsForColumns(cols);
                 textBox1.Text = newRows.ToString();
                 DrawGrid(GridType.Squares, Align.Center);
@@ -361,7 +366,6 @@ namespace GridMakerProject
     /*  실질적으로 그리드를 생성하고 그리는 클래스입니다.
      *  pictureBox와 pictureBox 이미지, 그리드의 Offset이 필드변수로 설정되어있습니다. */
     {
-        private PictureBox pictureBox;                      //Form1의 picturebox 객체
         private GridSetting gridSet;                        //현재 그리드 설정상태
         private PointF gridMoveDistance = new PointF(0, 0); //드래그해서 이동했을때의 그리드 위치
         private PointF imageSize = new PointF(0, 0);        //picturebox 내의 이미지 사이즈
@@ -370,10 +374,7 @@ namespace GridMakerProject
         private PointF gridSize = new PointF(0, 0);         //이미지 내의 그리드 사이즈
         private PointF dragStartPoint;                      //드래그 시작 지점
 
-        public GridDrawer(PictureBox pictureBox)
-        {
-            this.pictureBox = pictureBox;
-        }
+        
 
         public void SetGrid(GridSetting gridSet) // 그리드를 설정하는 함수
         {
@@ -404,7 +405,7 @@ namespace GridMakerProject
             return (int)Math.Round(imageSize.Y / avgRectSize);
         }
 
-        public void setImageOffset()
+        public void setImageOffset(PictureBox pictureBox)
         /* Form1.pictureBox의 이미지 오프셋을 계산해주는 함수 이미지 오프셋을 계산해야 그리드를 그릴 수 있다. */
         {
             imageSize.X = imageSize.Y = imageOffset.X = imageOffset.Y = 0;
@@ -504,13 +505,13 @@ namespace GridMakerProject
         }
 
 
-        public void DrawGrid(PaintEventArgs e, GridType gridType) 
+        public void DrawGrid(PaintEventArgs e, GridType gridType,PictureBox pictureBox) 
         {
             /*
              *그리드와 이미지의 오프셋을 계산하여 반영하고 조건에 맞는 사각형을 그리는 함수를 호출하도록 하는 함수입니다.
              *pictureBox1의 paint 이벤트로 등록되어 있어 pictureBox.refresh() 가 호출되면 호출됩니다. 
              */
-            setImageOffset();   //이미지 오프셋 및 크기 설정
+            setImageOffset(pictureBox);   //이미지 오프셋 및 크기 설정
             setGridOffset();    //그리드 오프셋 및 크기 설정
             if (imageSize.X == 0 || imageSize.Y == 0) return;
             // 값이 유효하지 않는다면 종료
@@ -611,7 +612,7 @@ namespace GridMakerProject
             dragStartPoint = location;
         }
         
-        public void Drag(Point currentLocation) 
+        public void Drag(Point currentLocation,PictureBox pictureBox) 
         // 마우스로 드래그를 할 때 호출되어 이동거리를 계산하여 그리드를 이동시키는 함수
         {
             if(gridSet == null || gridSet.gridType != GridType.Squares)
@@ -641,12 +642,19 @@ namespace GridMakerProject
             // 그리드를 다시 그리기 위해(드래그 행위를 반영하기 위해) 다시 그려줍니다. (setGridOffset() 함수에서 dx,dy가 반영됨)
         }
         
-        public void CaptureGrid(string path) // 그리드 부분만 파일로 출력해주는 함수
+        public void CaptureGrid(string path, PictureBox saveBox, PictureBox drawBox) // 그리드 부분만 파일로 출력해주는 함수
         {
+            GridType dB_gt = this.gridSet.gridType;
+            saveBox.Paint += new PaintEventHandler((s, e) => this.DrawGrid(e, this.gridSet.gridType,saveBox));
+            saveBox.Refresh();
+            Application.DoEvents();
+
+            //double ratio = saveBox.Image.Width / saveBox.Image.Width;
+
             Rectangle clipRect = new Rectangle((int)gridOffset.X, (int)gridOffset.Y, (int)gridSize.X, (int)gridSize.Y);
-            using (var originalBitmap = new Bitmap(pictureBox.Image.Width, pictureBox.Image.Height))
+            using (var originalBitmap = new Bitmap(saveBox.Image.Width, saveBox.Image.Height))
             {
-                pictureBox.DrawToBitmap(originalBitmap, pictureBox.ClientRectangle);
+                saveBox.DrawToBitmap(originalBitmap, saveBox.ClientRectangle);
 
                 using (var clippedBitmap = new Bitmap(clipRect.Width, clipRect.Height))
                 {
@@ -680,6 +688,9 @@ namespace GridMakerProject
                     clippedBitmap.Save(path, imageFormat);
                 }
             }
+            drawBox.Paint += new PaintEventHandler((s, e) => this.DrawGrid(e, dB_gt, drawBox));
+            Application.DoEvents();
+
         }
     }
     public enum GridType    
