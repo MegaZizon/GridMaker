@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics.Tracing;
 using System.Drawing;
 using System.IO;
 using System.IO.Ports;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Remoting.Messaging;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -21,6 +23,7 @@ namespace GridMakerProject
         private GridSetting gridSet;                    //form 클래스와 GridDrawer 클래스 간 매개변수로 사용되는 그리드의 설정
         private Color cl = Color.Black;                 //기본 색상값
         private Dictionary<Button, Align> alignButtons; //정렬 버튼 컬렉션
+        private bool setChange = false;
         public Form1()
         {
             InitializeComponent();
@@ -88,7 +91,15 @@ namespace GridMakerProject
                 && float.TryParse(numericUpDown2.Value.ToString(), out float lineOpacity))
             {
                 lineOpacity *= 0.01f;
-                gridSet = new GridSetting(rows, columns, gridType, cl, align, lineWeight, lineOpacity);
+                if (setChange)
+                {
+                    gridSet = new GridSetting(setChange, rows, columns, gridType, cl, align, lineWeight, lineOpacity);
+                    setChange= false;
+                }
+                else
+                {
+                    gridSet = new GridSetting(false, rows, columns, gridType, cl, align, lineWeight, lineOpacity);
+                }
                 drawer.SetGrid(gridSet);
                 return true;
             }
@@ -221,7 +232,7 @@ namespace GridMakerProject
                     PictureBox saveBox = new PictureBox();
                     saveBox.Image = pictureBox1.Image;
                     saveBox.SizeMode = PictureBoxSizeMode.AutoSize;
-                    this.Controls.Add(saveBox);
+                    this.Controls.Add(saveBox);                             //컨트롤로 추가되어야 정상적인 이미지가 출력됨
                     string filePath = saveFileDialog.FileName;
                     drawer.CaptureGrid(filePath, saveBox, pictureBox1);
                     this.Controls.Remove(saveBox);
@@ -336,6 +347,7 @@ namespace GridMakerProject
                 numericUpDown1.Value = 1;
                 return;
             }
+            setChange = true;
             DrawGrid(gridSet.gridType, gridSet.align);
         }
 
@@ -346,6 +358,7 @@ namespace GridMakerProject
                 numericUpDown2.Value = 100;
                 return;
             }
+            setChange = true;
             DrawGrid(gridSet.gridType, gridSet.align);
         }
         private void button7_Click(object sender, EventArgs e) //선 색상 변경 버튼 클릭시 실행되는 함수
@@ -354,6 +367,7 @@ namespace GridMakerProject
             {
                 return;
             }
+            setChange = true;
             colorDialog1.ShowDialog();
             cl = colorDialog1.Color;
             DrawGrid(gridSet.gridType, gridSet.align);
@@ -373,14 +387,19 @@ namespace GridMakerProject
         private PointF gridOffset = new PointF(0, 0);       //이미지 기준 그리드 오프셋
         private PointF gridSize = new PointF(0, 0);         //이미지 내의 그리드 사이즈
         private PointF dragStartPoint;                      //드래그 시작 지점
+        private float dx,dy;
 
         
 
         public void SetGrid(GridSetting gridSet) // 그리드를 설정하는 함수
         {
             this.gridSet = gridSet;
-            this.gridMoveDistance.X = 0;
-            this.gridMoveDistance.Y = 0;
+            if(!gridSet.setChange)
+            {
+                this.gridMoveDistance.X = 0;
+                this.gridMoveDistance.Y = 0;
+                this.gridSet.setChange = false;
+            }
         }
 
         public int CalculateColumnsForRows(int rows)
@@ -439,7 +458,7 @@ namespace GridMakerProject
             }
         }
 
-        private void setGridOffset()
+        private void setGridOffset(PictureBox pb)
         /*
          * 이미지의 오프셋을 계산했다면 이제 그리드의 오프셋을 계산해야 합니다.
          * 그리드가 제대로 그려지기 위해서는 그리드의 시작 위치와 크기를 정확히 계산해야 합니다.
@@ -484,9 +503,60 @@ namespace GridMakerProject
                         startY = imageOffset.Y + (imageSize.Y - totalGridHeight) / 2;
                         break;
                 }
-                
-                startX += gridMoveDistance.X;
-                startY += gridMoveDistance.Y;
+                if (pb.Tag != null)
+                {
+                    float ratio = (float)pb.Tag;
+
+                    float imgRatio = imageSize.X / imageSize.Y;
+                    float gridRatio = gridSize.X / gridSize.Y;
+                    if (imgRatio > gridRatio)
+                    {
+                        startX += (gridMoveDistance.X * ratio);
+                    }
+                    else
+                    {
+                        startY += (gridMoveDistance.Y * ratio);
+                    }
+                }
+                else
+                {
+                    float imgRatio = imageSize.X / imageSize.Y;
+                    float gridRatio = gridSize.X / gridSize.Y;
+                    if (imgRatio > gridRatio)
+                    {
+                        if (startX + gridMoveDistance.X < imageOffset.X)
+                        {
+                            startX = imageOffset.X;
+                            gridMoveDistance.X = -(imageSize.X/2);
+                        }
+                        else if (startX + gridMoveDistance.X + gridSize.X > pb.ClientSize.Width - imageOffset.X)
+                        {
+                            startX = pb.ClientSize.Width - imageOffset.X - gridSize.X;
+                            gridMoveDistance.X = (imageSize.X / 2);
+                        }
+                        else
+                        {
+                            startX += gridMoveDistance.X;
+                        }
+                    }
+                    else
+                    {
+                        if (startY + gridMoveDistance.Y < imageOffset.Y)
+                        {
+                            startY = imageOffset.Y;
+                            gridMoveDistance.Y = -(imageSize.Y/2);
+                        }
+                        else if (startY + gridMoveDistance.Y + gridSize.Y > pb.ClientSize.Height - imageOffset.Y)
+                        {
+                            startY = pb.ClientSize.Height - imageOffset.Y - gridSize.Y;
+                            gridMoveDistance.Y = (imageSize.Y / 2);
+                        }
+                        else
+                        {
+                            startY += gridMoveDistance.Y;
+                        }
+                    }
+                }
                 // 사용자가 드래그를 하면 계산되는 값입니다. 드래그를 하지 않을 경우 gridMoveDistance 는 0 입니다.
 
                 gridOffset.X = startX;
@@ -512,7 +582,7 @@ namespace GridMakerProject
              *pictureBox1의 paint 이벤트로 등록되어 있어 pictureBox.refresh() 가 호출되면 호출됩니다. 
              */
             setImageOffset(pictureBox);   //이미지 오프셋 및 크기 설정
-            setGridOffset();    //그리드 오프셋 및 크기 설정
+            setGridOffset(pictureBox);    //그리드 오프셋 및 크기 설정
             if (imageSize.X == 0 || imageSize.Y == 0) return;
             // 값이 유효하지 않는다면 종료
 
@@ -619,8 +689,8 @@ namespace GridMakerProject
             {
                 return;
             }
-            float dx = currentLocation.X - dragStartPoint.X;
-            float dy = currentLocation.Y - dragStartPoint.Y;
+            dx = currentLocation.X - dragStartPoint.X;
+            dy = currentLocation.Y - dragStartPoint.Y;
             // 시작 위치에서 움직인 거리를 계산하여 dx,dy에 반영합니다.
             float imgRatio = imageSize.X / imageSize.Y;
             float gridRatio = gridSize.X / gridSize.Y;
@@ -645,11 +715,11 @@ namespace GridMakerProject
         public void CaptureGrid(string path, PictureBox saveBox, PictureBox drawBox) // 그리드 부분만 파일로 출력해주는 함수
         {
             GridType dB_gt = this.gridSet.gridType;
+            float ratio = saveBox.Image.Width / drawBox.ClientSize.Width;
+            saveBox.Tag = ratio;
             saveBox.Paint += new PaintEventHandler((s, e) => this.DrawGrid(e, this.gridSet.gridType,saveBox));
             saveBox.Refresh();
             Application.DoEvents();
-
-            //double ratio = saveBox.Image.Width / saveBox.Image.Width;
 
             Rectangle clipRect = new Rectangle((int)gridOffset.X, (int)gridOffset.Y, (int)gridSize.X, (int)gridSize.Y);
             using (var originalBitmap = new Bitmap(saveBox.Image.Width, saveBox.Image.Height))
@@ -708,7 +778,8 @@ namespace GridMakerProject
         Right,
         Top,
         Bottom,
-        Center
+        Center,
+        None,
     }
     public class GridSetting
     /*그리드의 설정을 저장한 클래스 입니다*/
@@ -718,9 +789,11 @@ namespace GridMakerProject
         public Color color;                 // 그리드 선의 색상 입니다.
         public int rows, columns;           // 그리드의 행,열 입니다.
         public float lineWeight, lineOpacity;//그리드 선의 굵기, 투명도 입니다.
-        public GridSetting(int rows, int cols, GridType gt, Color c, Align a = Align.Center, float LW = 1.0f, float LO = 1.0f)
+        public bool setChange;
+        public GridSetting(bool setchange, int rows, int cols, GridType gt, Color c, Align a = Align.Center, float LW = 1.0f, float LO = 1.0f)
         /* 그리드 설정 생성자 입니다. 정렬상태와 선굵기,선투명도는 기본값을 Center, 1.0, 1.0으로 설정하여 선택적 매개변수로 받습니다. */
         {
+            this.setChange=setchange;
             this.gridType = gt;
             this.align = a;
             this.color = c;
