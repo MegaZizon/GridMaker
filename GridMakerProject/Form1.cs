@@ -13,6 +13,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Windows.Forms.AxHost;
 
 namespace GridMakerProject
 {
@@ -381,7 +382,7 @@ namespace GridMakerProject
      *  pictureBox와 pictureBox 이미지, 그리드의 Offset이 필드변수로 설정되어있습니다. */
     {
         private GridSetting gridSet;                        //현재 그리드 설정상태
-        private PointF gridMoveDistance = new PointF(0, 0); //드래그해서 이동했을때의 그리드 위치
+        private Point gridMoveDistance = new Point(0, 0); //드래그해서 이동했을때의 그리드 위치
         private PointF imageSize = new PointF(0, 0);        //picturebox 내의 이미지 사이즈
         private PointF imageOffset = new PointF(0, 0);      //picturebox 기준 이미지 오프셋
         private PointF gridOffset = new PointF(0, 0);       //이미지 기준 그리드 오프셋
@@ -394,12 +395,32 @@ namespace GridMakerProject
         public void SetGrid(GridSetting gridSet) // 그리드를 설정하는 함수
         {
             this.gridSet = gridSet;
-            if(!gridSet.setChange)
+
+            if (!gridSet.setChange)
             {
                 this.gridMoveDistance.X = 0;
                 this.gridMoveDistance.Y = 0;
                 this.gridSet.setChange = false;
             }
+
+            switch (gridSet.align)
+            {
+                case(Align.Left):
+                    gridMoveDistance.X = (int)(-((imageSize.X / 2) - (gridSize.X / 2)));
+                    break;
+                case(Align.Right):
+                    gridMoveDistance.X = (int)((imageSize.X / 2) - (gridSize.X / 2));
+                    break;
+                case(Align.Top):
+                    gridMoveDistance.Y = (int)(-((imageSize.Y / 2) - (gridSize.Y / 2)));
+                    break;
+                case(Align.Bottom):
+                    gridMoveDistance.Y = (int)((imageSize.Y / 2) - (gridSize.Y / 2));
+                    break;
+
+            }
+            
+            
         }
 
         public int CalculateColumnsForRows(int rows)
@@ -484,6 +505,9 @@ namespace GridMakerProject
                 float startX = imageOffset.X;
                 float startY = imageOffset.Y;
 
+                float imgRatio = imageSize.X / imageSize.Y;
+                float gridRatio = totalGridWidth / totalGridHeight;
+
                 switch (gridSet.align)
                 //pictureBox의 이미지를 기준으로 어디부터 그려야 정렬이 될지 startX,Y값을 계산하는 코드입니다.
                  
@@ -499,16 +523,19 @@ namespace GridMakerProject
                         startY = imageOffset.Y + (imageSize.Y - totalGridHeight);
                         break;
                     case Align.Center:
-                        startX = imageOffset.X + (imageSize.X - totalGridWidth) / 2;
-                        startY = imageOffset.Y + (imageSize.Y - totalGridHeight) / 2;
+                        if(imgRatio > gridRatio)
+                        {
+                            startX = imageOffset.X + (imageSize.X - totalGridWidth) / 2;
+                        }
+                        else
+                        {
+                            startY = imageOffset.Y + (imageSize.Y - totalGridHeight) / 2;
+                        }
                         break;
                 }
                 if (pb.Tag != null)
                 {
                     float ratio = (float)pb.Tag;
-
-                    float imgRatio = imageSize.X / imageSize.Y;
-                    float gridRatio = gridSize.X / gridSize.Y;
                     if (imgRatio > gridRatio)
                     {
                         startX += (gridMoveDistance.X * ratio);
@@ -520,40 +547,42 @@ namespace GridMakerProject
                 }
                 else
                 {
-                    float imgRatio = imageSize.X / imageSize.Y;
-                    float gridRatio = gridSize.X / gridSize.Y;
                     if (imgRatio > gridRatio)
                     {
-                        if (startX + gridMoveDistance.X < imageOffset.X)
+                        if ((int)(startX + gridMoveDistance.X) < (int)(imageOffset.X))
                         {
                             startX = imageOffset.X;
-                            gridMoveDistance.X = -(imageSize.X/2);
+                            gridMoveDistance.X = (int)(-((imageSize.X / 2) - (gridSize.X / 2)));
                         }
-                        else if (startX + gridMoveDistance.X + gridSize.X > pb.ClientSize.Width - imageOffset.X)
+                        else if ((int)(startX + gridMoveDistance.X + gridSize.X) > (int)(pb.ClientSize.Width - imageOffset.X))
                         {
                             startX = pb.ClientSize.Width - imageOffset.X - gridSize.X;
-                            gridMoveDistance.X = (imageSize.X / 2);
+                            gridMoveDistance.X = (int)((imageSize.X / 2) - (gridSize.X / 2));
                         }
                         else
                         {
-                            startX += gridMoveDistance.X;
+                            if((startX + gridMoveDistance.X != (int)(imageOffset.X)) ||
+                                ((int)(startX + gridMoveDistance.X + gridSize.X) != (int)(pb.ClientSize.Width - imageOffset.X)))
+                                startX += gridMoveDistance.X;
                         }
                     }
                     else
                     {
-                        if (startY + gridMoveDistance.Y < imageOffset.Y)
+                        if ((int)(startY + gridMoveDistance.Y) < (int)(imageOffset.Y))
                         {
                             startY = imageOffset.Y;
-                            gridMoveDistance.Y = -(imageSize.Y/2);
+                            gridMoveDistance.Y = (int)(-((imageSize.Y/2)-(gridSize.Y/2)));
                         }
-                        else if (startY + gridMoveDistance.Y + gridSize.Y > pb.ClientSize.Height - imageOffset.Y)
+                        else if ((int)(startY + gridMoveDistance.Y + gridSize.Y) > (int)(pb.ClientSize.Height - imageOffset.Y))
                         {
                             startY = pb.ClientSize.Height - imageOffset.Y - gridSize.Y;
-                            gridMoveDistance.Y = (imageSize.Y / 2);
+                            gridMoveDistance.Y = (int)((imageSize.Y/2)-(gridSize.Y/2));
                         }
                         else
                         {
-                            startY += gridMoveDistance.Y;
+                            if(((int)(startY + gridMoveDistance.Y) < (int)(imageOffset.Y)) || 
+                                ((int)(startY + gridMoveDistance.Y + gridSize.Y) > (int)(pb.ClientSize.Height - imageOffset.Y)))
+                                startY += gridMoveDistance.Y;
                         }
                     }
                 }
@@ -689,6 +718,12 @@ namespace GridMakerProject
             {
                 return;
             }
+
+            float avgRectSize = Math.Min(imageSize.X / gridSet.columns, imageSize.Y / gridSet.rows);
+            float totalGridWidth = avgRectSize * gridSet.columns;
+            float totalGridHeight = avgRectSize * gridSet.rows;
+            
+
             dx = currentLocation.X - dragStartPoint.X;
             dy = currentLocation.Y - dragStartPoint.Y;
             // 시작 위치에서 움직인 거리를 계산하여 dx,dy에 반영합니다.
@@ -696,16 +731,35 @@ namespace GridMakerProject
             float gridRatio = gridSize.X / gridSize.Y;
 
             if (imgRatio > gridRatio)
+            {
+                float startX = imageOffset.X + (imageSize.X - totalGridWidth) / 2;
+                if ((int)(startX + gridMoveDistance.X)+dx < (int)(imageOffset.X) ||
+                    (int)(startX + gridMoveDistance.X + gridSize.X)+dx > (int)(pictureBox.ClientSize.Width - imageOffset.X))
+                {
+                    return;
+                }
+            }
+            else
+            {
+                float startY = imageOffset.Y + (imageSize.Y - totalGridHeight) / 2;
+                if ((int)(startY + gridMoveDistance.Y)+dy < (int)(imageOffset.Y)||
+                    (int)(startY + gridMoveDistance.Y + gridSize.Y)+dy > (int)(pictureBox.ClientSize.Height - imageOffset.Y))
+                {
+                    return;
+                }
+            }
+
+            if (imgRatio > gridRatio)
             /* 
              * 이미지의 가로 세로 비율과 그리드의 가로 세로 비율을 비교하여 드래그할 때 그리드가 이미지 내에서 어떻게 이동할지를 결정합니다.
              * 예를들어 이미지의 크기가 가로500 세로100 이고 (정사각형)그리드의 크기가 가로세로 100 이라면 가로로만 이동할 수 있도록 합니다.
              */
             {
-                gridMoveDistance.X += dx;
+                gridMoveDistance.X += (int)dx;
             }
             else
             {
-                gridMoveDistance.Y += dy;
+                gridMoveDistance.Y += (int)dy;
             }
             dragStartPoint = currentLocation;
             pictureBox.Refresh();
@@ -715,7 +769,7 @@ namespace GridMakerProject
         public void CaptureGrid(string path, PictureBox saveBox, PictureBox drawBox) // 그리드 부분만 파일로 출력해주는 함수
         {
             GridType dB_gt = this.gridSet.gridType;
-            float ratio = saveBox.Image.Width / drawBox.ClientSize.Width;
+            float ratio = saveBox.Image.Width / imageSize.X;
             saveBox.Tag = ratio;
             saveBox.Paint += new PaintEventHandler((s, e) => this.DrawGrid(e, this.gridSet.gridType,saveBox));
             saveBox.Refresh();
