@@ -237,7 +237,7 @@ namespace GridMakerProject
                     string filePath = saveFileDialog.FileName;
                     drawer.CaptureGrid(filePath, saveBox, pictureBox1);
                     this.Controls.Remove(saveBox);
-                    pictureBox1.Refresh();
+                    DrawGrid(gridSet.gridType, Align.None);
                     MessageBox.Show($"이미지가 {filePath}에 저장되었습니다.", "저장 완료");
                 }
             }
@@ -348,8 +348,7 @@ namespace GridMakerProject
                 numericUpDown1.Value = 1;
                 return;
             }
-            setChange = true;
-            DrawGrid(gridSet.gridType, gridSet.align);
+            DrawGrid(gridSet.gridType, Align.None);
         }
 
         private void numericUpDown2_ValueChanged(object sender, EventArgs e) //선 투명도 수치 변경시 실행되는 함수
@@ -359,8 +358,7 @@ namespace GridMakerProject
                 numericUpDown2.Value = 100;
                 return;
             }
-            setChange = true;
-            DrawGrid(gridSet.gridType, gridSet.align);
+            DrawGrid(gridSet.gridType, Align.None);
         }
         private void button7_Click(object sender, EventArgs e) //선 색상 변경 버튼 클릭시 실행되는 함수
         {
@@ -368,10 +366,9 @@ namespace GridMakerProject
             {
                 return;
             }
-            setChange = true;
             colorDialog1.ShowDialog();
             cl = colorDialog1.Color;
-            DrawGrid(gridSet.gridType, gridSet.align);
+            DrawGrid(gridSet.gridType, Align.None);
             button7.BackColor = cl;
         }
 
@@ -382,7 +379,7 @@ namespace GridMakerProject
      *  pictureBox와 pictureBox 이미지, 그리드의 Offset이 필드변수로 설정되어있습니다. */
     {
         private GridSetting gridSet;                        //현재 그리드 설정상태
-        private Point gridMoveDistance = new Point(0, 0); //드래그해서 이동했을때의 그리드 위치
+        private PointF gridMoveDistance = new PointF(0, 0); //드래그해서 이동했을때의 그리드 위치
         private PointF imageSize = new PointF(0, 0);        //picturebox 내의 이미지 사이즈
         private PointF imageOffset = new PointF(0, 0);      //picturebox 기준 이미지 오프셋
         private PointF gridOffset = new PointF(0, 0);       //이미지 기준 그리드 오프셋
@@ -397,13 +394,6 @@ namespace GridMakerProject
         {
             this.gridSet = gridSet;
 
-            if (!gridSet.setChange)
-            {
-                this.gridMoveDistance.X = 0;
-                this.gridMoveDistance.Y = 0;
-                this.gridSet.setChange = false;
-            }
-
             switch (gridSet.align)
             {
                 case(Align.Left):
@@ -417,6 +407,12 @@ namespace GridMakerProject
                     break;
                 case(Align.Bottom):
                     gridMoveDistance.Y = (int)((imageSize.Y / 2) - (gridSize.Y / 2));
+                    break;
+                case (Align.Center):
+                    gridMoveDistance.X = 0;
+                    gridMoveDistance.Y = 0;
+                    break;
+                case (Align.None):
                     break;
 
             }
@@ -519,31 +515,29 @@ namespace GridMakerProject
                     startY = imageOffset.Y + (imageSize.Y - totalGridHeight) / 2;
                 }
 
-                if (past_Size == 0)
+                if (past_Size == 0 && pb.Tag==null)
                 {
                     startX += gridMoveDistance.X;
                     startY += gridMoveDistance.Y;
                     past_Size = this.imageSize.X;
                 }
-                else
+                else if(pb.Tag==null)
                 {
                     float ratio = this.imageSize.X/past_Size;
                     if (ratio > 0)
                     {
-                        gridMoveDistance.X *= (int)ratio;
-                        gridMoveDistance.Y *= (int)ratio;
+                        gridMoveDistance.X *= ratio;
+                        gridMoveDistance.Y *= ratio;
                     }
                     else
                     {
-                        gridMoveDistance.X /= (int)ratio;
-                        gridMoveDistance.Y /= (int)ratio;
+                        gridMoveDistance.X /= ratio;
+                        gridMoveDistance.Y /= ratio;
                     }
                     startX += gridMoveDistance.X;
                     startY += gridMoveDistance.Y;
                     past_Size = this.imageSize.X;
-                }
-
-                if (pb.Tag != null)
+                }else if (pb.Tag != null)
                 {
                     float ratio = (float)pb.Tag;
                     if (imgRatio > gridRatio)
@@ -584,9 +578,17 @@ namespace GridMakerProject
             if (imageSize.X == 0 || imageSize.Y == 0) return;
             // 값이 유효하지 않는다면 종료
 
+
+            if(pictureBox.Tag != null)
+            {
+                float ratio = (float)pictureBox.Tag;
+                gridSet.lineWeight *= (ratio*(float)0.3);
+            }
             Graphics g = e.Graphics;
             Color transparentColor = Color.FromArgb((int)(gridSet.lineOpacity * 255), gridSet.color);
             Pen pen = new Pen(transparentColor, gridSet.lineWeight);
+
+
             /* 
              * PaintEventArgs에서 그리기 작업을 수행하는 데 사용되는 Graphics 객체를 가져옵니다. 이 객체를 이용하여 그리드를 그릴 수 있습니다.
              * 사용자가 설정한 그리드 선의 색상, 투명도, 굵기를 반영해 그릴 Pen 객체를 생성합니다.
@@ -737,7 +739,7 @@ namespace GridMakerProject
         
         public void CaptureGrid(string path, PictureBox saveBox, PictureBox drawBox) // 그리드 부분만 파일로 출력해주는 함수
         {
-            GridType dB_gt = this.gridSet.gridType;
+            GridSetting gS = this.gridSet;
             float ratio = saveBox.Image.Width / imageSize.X;
             saveBox.Tag = ratio;
             saveBox.Paint += new PaintEventHandler((s, e) => this.DrawGrid(e, this.gridSet.gridType,saveBox));
@@ -781,8 +783,6 @@ namespace GridMakerProject
                     clippedBitmap.Save(path, imageFormat);
                 }
             }
-            drawBox.Paint += new PaintEventHandler((s, e) => this.DrawGrid(e, dB_gt, drawBox));
-            Application.DoEvents();
 
         }
     }
