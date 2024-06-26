@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -21,11 +22,13 @@ namespace GridMakerProject
     public partial class Form1 : Form
     {
         private GridDrawer drawer;                      //그리드를 실질적으로 그리는 객체
-        private GridSetting gridSet;                    //form 클래스와 GridDrawer 클래스 간 매개변수로 사용되는 그리드의 설정
+        private GridSetting gridSet;                //form 클래스와 GridDrawer 클래스 간 매개변수로 사용되는 그리드의 설정
         private Color cl = Color.Black;                 //기본 색상값
         private Dictionary<Button, Align> alignButtons; //정렬 버튼 컬렉션
-        private bool setChange = false;
         private bool suppressValueChanged= false;
+        public bool isSubGridChecked = false;
+        public static GridSetting subGridSet;
+
         public Form1()
         {
             InitializeComponent();
@@ -94,15 +97,8 @@ namespace GridMakerProject
                 && float.TryParse(numericUpDown2.Value.ToString(), out float lineOpacity))
             {
                 lineOpacity *= 0.01f;
-                if (setChange)
-                {
-                    gridSet = new GridSetting(setChange, rows, columns, gridType, cl, align, lineWeight, lineOpacity);
-                    setChange= false;
-                }
-                else
-                {
-                    gridSet = new GridSetting(false, rows, columns, gridType, cl, align, lineWeight, lineOpacity);
-                }
+                gridSet = new GridSetting(rows, columns, gridType, cl, align, lineWeight, lineOpacity);
+                
                 drawer.SetGrid(gridSet);
                 return true;
             }
@@ -254,7 +250,13 @@ namespace GridMakerProject
             {
                 return;
             }
+            suppressValueChanged = true;
+            numericUpDown3.ValueChanged -= numericUpDown3_ValueChanged;
+            numericUpDown4.ValueChanged -= numericUpDown4_ValueChanged;
             DrawGrid(GridType.Squares,Align.Center);
+            suppressValueChanged = false;
+            numericUpDown3.ValueChanged += numericUpDown3_ValueChanged;
+            numericUpDown4.ValueChanged += numericUpDown4_ValueChanged;
         }
         private void button3_Click(object sender, EventArgs e) //행 x 열 직사각형 그리기 버튼 클릭시 실행되는 함수
         {
@@ -307,7 +309,15 @@ namespace GridMakerProject
             }
             if (e.Button == MouseButtons.Right)
             {
-                drawer.getSubGridLocation(e.Location);
+                string s =drawer.getSubGridLocation(e.Location,isSubGridChecked,subGridSet);
+                if (s == "체크")
+                {
+                    isSubGridChecked = true;
+                }
+                else if(s =="미체크")
+                {
+                    isSubGridChecked = false;
+                }
                 pictureBox1.Refresh();
             }
             else
@@ -418,6 +428,26 @@ namespace GridMakerProject
             button15_Click(sender, e);
         }
 
+        private void 그리드세부설정SToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                Form2 form2 = new Form2(isSubGridChecked,subGridSet);
+                //form2.Owner = this;        //현재  폼이  form2를  소유 this.AddOwnedForm(form2);
+                form2.ShowDialog();
+                subGridSet = form2.gS;
+
+                int a;
+                a = subGridSet.rows;
+
+                subGridSet = form2.gS;
+                isSubGridChecked = form2.checkBox1.Checked;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"그리드 세부 설정 취소");
+            }
+        }
     }
     public class GridDrawer 
     /*  실질적으로 그리드를 생성하고 그리는 클래스입니다.
@@ -431,9 +461,9 @@ namespace GridMakerProject
         private PointF gridSize = new PointF(0, 0);         //이미지 내의 그리드 사이즈
         private PointF dragStartPoint;                      //드래그 시작 지점
         private float past_Size = 0;                        //이전에 그렸다면, 사이즈를 이곳에 저장
-        private List<Point> clickPoints = new List<Point>();
+        private Dictionary<Point,GridSetting> clickPoints = new Dictionary<Point, GridSetting>();
 
-        
+
 
         public void SetGrid(GridSetting gridSet) // 그리드를 설정하는 함수
         {
@@ -625,11 +655,11 @@ namespace GridMakerProject
             // 값이 유효하지 않는다면 종료
 
 
-            if(pictureBox.Tag != null)
+            /*if(pictureBox.Tag != null)
             {
                 float ratio = (float)pictureBox.Tag;
                 gridSet.lineWeight *= (ratio*(float)0.2);
-            }
+            }*/
             Graphics g = e.Graphics;
             Color transparentColor = Color.FromArgb((int)(gridSet.lineOpacity * 255), gridSet.color);
             Pen pen = new Pen(transparentColor, gridSet.lineWeight);
@@ -652,7 +682,7 @@ namespace GridMakerProject
                      * 드래그하여 그리드를 움직일 수 있습니다. 사용자에게 이를 표시해주기 위해서 
                      * picturebox에 마우스를 가져다가 댈 경우 커서를 바꿔줍니다.
                     */
-                    DrawSquares(g, pen);
+                    DrawSquares(g, pen,pictureBox);
                     pictureBox.Cursor = Cursors.SizeAll;
                     break;
                 case GridType.HorizontalLines:  // 수평선을 그리는 경우  DrawHorizontalLines() 함수 호출 
@@ -683,7 +713,7 @@ namespace GridMakerProject
             }
         }
 
-        private void DrawSquares(Graphics g, Pen pen)
+        private void DrawSquares(Graphics g, Pen pen,PictureBox pictureBox)
         {
             // 실제로 정사각형 그리드를 그려주는 함수입니다.
             float avgRectSize = Math.Min(imageSize.X / gridSet.columns, imageSize.Y / gridSet.rows);
@@ -696,17 +726,30 @@ namespace GridMakerProject
                     float y = gridOffset.Y + row * avgRectSize;
                     g.DrawRectangle(pen, x, y, avgRectSize, avgRectSize);
 
-                    foreach (Point p in clickPoints)
+
+                    ICollection<Point> keys = clickPoints.Keys;
+
+                    foreach (Point p in keys)
                     {
                         if (p.X == row && p.Y == col)
                         {
-                            for (int row2 = 0; row2 < gridSet.rows; row2++)
+                            clickPoints.TryGetValue(p, out GridSetting subGridSet);
+                            /*if (pictureBox.Tag != null)
                             {
-                                for (int col2 = 0; col2 < gridSet.columns; col2++)
+                                float ratio = (float)pictureBox.Tag;
+                                subGridSet.lineWeight *= (ratio * (float)0.1);
+                            }*/
+                            float subGridSetSize = avgRectSize;
+                            subGridSetSize = subGridSetSize / subGridSet.rows;
+                            Color transparentColor = Color.FromArgb((int)(subGridSet.lineOpacity * 255), subGridSet.color);
+                            Pen subPen = new Pen(transparentColor, subGridSet.lineWeight);
+                            for (int subRow = 0; subRow < subGridSet.rows; subRow++)
+                            {
+                                for (int subCol = 0; subCol < subGridSet.columns; subCol++)
                                 {
-                                    float x2 = x + col2 * 10;
-                                    float y2 = y + row2 * 10;
-                                    g.DrawRectangle(pen, x2, y2, 10, 10);
+                                    float subX = x + subCol * subGridSetSize;
+                                    float subY = y + subRow * subGridSetSize;
+                                    g.DrawRectangle(subPen, subX, subY, subGridSetSize, subGridSetSize);
                                 }
                             }
                         }
@@ -795,15 +838,14 @@ namespace GridMakerProject
             // 그리드를 다시 그리기 위해(드래그 행위를 반영하기 위해) 다시 그려줍니다. (setGridOffset() 함수에서 dx,dy가 반영됨)
         }
 
-        public void getSubGridLocation(Point clickLocation)
+        public string getSubGridLocation(Point clickLocation,bool iSGS,GridSetting sGS)
         {
             if (gridSet == null || gridSet.gridType != GridType.Squares)
             {
-                return;
+                return $"조기종료";
             }
 
             float avgRectSize = Math.Min(imageSize.X / gridSet.columns, imageSize.Y / gridSet.rows);
-            // 정사각형 그리드에 표현되는 한개의 정사각형 사이즈를 계산합니다.
             for (int row = 0; row < gridSet.rows; row++)
             {
                 for (int col = 0; col < gridSet.columns; col++)
@@ -816,10 +858,12 @@ namespace GridMakerProject
                         Point newPoint = new Point(row, col);
                         bool pointExists = false;
 
-                        foreach (Point p in clickPoints)
+                        ICollection<Point> keys = clickPoints.Keys;
+                        foreach (Point p in keys)
                         {
                             if (p.X == newPoint.X && p.Y == newPoint.Y)
                             {
+                                clickPoints.Remove(p);
                                 pointExists = true;
                                 break;
                             }
@@ -827,15 +871,47 @@ namespace GridMakerProject
 
                         if (!pointExists)
                         {
-                            clickPoints.Add(newPoint);
-                        }
-                        else
-                        {
-                            clickPoints.RemoveAll(p => p.X == newPoint.X && p.Y == newPoint.Y);
+                            try
+                            {
+                                if (iSGS)
+                                {
+                                    clickPoints.Add(newPoint, sGS);
+                                }
+                                else
+                                {
+                                    Form2 form2 = new Form2(iSGS, sGS);
+                                    //form2.Owner = this;        //현재  폼이  form2를  소유 this.AddOwnedForm(form2);
+                                    form2.ShowDialog();
+                                    GridSetting subGridSet = form2.gS;
+
+                                    int a;
+                                    a = subGridSet.rows;
+
+                                    subGridSet = form2.gS;
+                                    clickPoints.Add(newPoint, subGridSet);
+                                    Form1.subGridSet = subGridSet;
+                                    if (form2.checkBox1.Checked)
+                                    {
+                                        return "체크";
+                                    }
+                                    else
+                                    {
+                                        return "미체크";
+                                    }
+                                }
+                                
+                            }
+                            catch(Exception ex)
+                            {
+                                MessageBox.Show($"세부 그리드 설정 취소");
+                                return "오류종료";
+                            }
+
                         }
                     }
                 }
             }
+            return "오류종료";
         }
 
         public void CaptureGrid(string path, PictureBox saveBox, PictureBox drawBox) // 그리드 부분만 파일로 출력해주는 함수
@@ -913,11 +989,9 @@ namespace GridMakerProject
         public Color color;                 // 그리드 선의 색상 입니다.
         public int rows, columns;           // 그리드의 행,열 입니다.
         public float lineWeight, lineOpacity;//그리드 선의 굵기, 투명도 입니다.
-        public bool setChange;
-        public GridSetting(bool setchange, int rows, int cols, GridType gt, Color c, Align a = Align.Center, float LW = 1.0f, float LO = 1.0f)
+        public GridSetting(int rows, int cols, GridType gt, Color c, Align a = Align.Center, float LW = 1.0f, float LO = 1.0f)
         /* 그리드 설정 생성자 입니다. 정렬상태와 선굵기,선투명도는 기본값을 Center, 1.0, 1.0으로 설정하여 선택적 매개변수로 받습니다. */
         {
-            this.setChange=setchange;
             this.gridType = gt;
             this.align = a;
             this.color = c;

@@ -70,6 +70,7 @@
             this.끝내기ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.편집EToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.모두지우기ToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.그리드세부설정SToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.groupBox1.SuspendLayout();
             this.groupBox4.SuspendLayout();
@@ -138,7 +139,7 @@
             this.button4.Name = "button4";
             this.button4.Size = new System.Drawing.Size(125, 23);
             this.button4.TabIndex = 6;
-            this.button4.Text = "행 그리기";
+            this.button4.Text = "행만 그리기";
             this.button4.UseVisualStyleBackColor = true;
             this.button4.Click += new System.EventHandler(this.button4_Click);
             // 
@@ -149,7 +150,7 @@
             this.button5.Name = "button5";
             this.button5.Size = new System.Drawing.Size(125, 23);
             this.button5.TabIndex = 7;
-            this.button5.Text = "열 그리기";
+            this.button5.Text = "열만 그리기";
             this.button5.UseVisualStyleBackColor = true;
             this.button5.Click += new System.EventHandler(this.button5_Click);
             // 
@@ -185,9 +186,9 @@
             this.groupBox3.Controls.Add(this.button7);
             this.groupBox3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox3.Font = new System.Drawing.Font("굴림", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(129)));
-            this.groupBox3.Location = new System.Drawing.Point(3, 377);
+            this.groupBox3.Location = new System.Drawing.Point(3, 378);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(180, 164);
+            this.groupBox3.Size = new System.Drawing.Size(180, 163);
             this.groupBox3.TabIndex = 16;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "선 설정";
@@ -285,7 +286,7 @@
             this.groupBox2.Font = new System.Drawing.Font("굴림", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(129)));
             this.groupBox2.Location = new System.Drawing.Point(3, 17);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(180, 360);
+            this.groupBox2.Size = new System.Drawing.Size(180, 361);
             this.groupBox2.TabIndex = 15;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "그리드 설정";
@@ -296,6 +297,11 @@
             this.numericUpDown4.Name = "numericUpDown4";
             this.numericUpDown4.Size = new System.Drawing.Size(88, 21);
             this.numericUpDown4.TabIndex = 26;
+            this.numericUpDown4.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
             this.numericUpDown4.ValueChanged += new System.EventHandler(this.numericUpDown4_ValueChanged);
             // 
             // numericUpDown3
@@ -304,6 +310,11 @@
             this.numericUpDown3.Name = "numericUpDown3";
             this.numericUpDown3.Size = new System.Drawing.Size(88, 21);
             this.numericUpDown3.TabIndex = 25;
+            this.numericUpDown3.Value = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
             this.numericUpDown3.ValueChanged += new System.EventHandler(this.numericUpDown3_ValueChanged);
             // 
             // button15
@@ -321,6 +332,7 @@
             // 
             this.button14.BackColor = System.Drawing.Color.White;
             this.button14.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.button14.Enabled = false;
             this.button14.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.button14.ForeColor = System.Drawing.SystemColors.ControlDark;
             this.button14.ImageIndex = 3;
@@ -346,6 +358,7 @@
             // 
             this.button13.BackColor = System.Drawing.Color.White;
             this.button13.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.button13.Enabled = false;
             this.button13.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.button13.ForeColor = System.Drawing.SystemColors.ControlDark;
             this.button13.ImageIndex = 4;
@@ -360,6 +373,7 @@
             // 
             this.button12.BackColor = System.Drawing.Color.White;
             this.button12.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.button12.Enabled = false;
             this.button12.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.button12.ForeColor = System.Drawing.SystemColors.ControlDark;
             this.button12.ImageIndex = 5;
@@ -374,6 +388,7 @@
             // 
             this.button11.BackColor = System.Drawing.Color.White;
             this.button11.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.button11.Enabled = false;
             this.button11.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.button11.ForeColor = System.Drawing.SystemColors.ControlDark;
             this.button11.ImageIndex = 2;
@@ -388,6 +403,7 @@
             // 
             this.button10.BackColor = System.Drawing.Color.White;
             this.button10.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.button10.Enabled = false;
             this.button10.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.button10.ForeColor = System.Drawing.SystemColors.ControlDark;
             this.button10.ImageIndex = 1;
@@ -402,6 +418,7 @@
             // 
             this.button9.BackColor = System.Drawing.Color.White;
             this.button9.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.button9.Enabled = false;
             this.button9.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.button9.ForeColor = System.Drawing.SystemColors.ControlDark;
             this.button9.ImageIndex = 0;
@@ -495,7 +512,8 @@
             // 편집EToolStripMenuItem
             // 
             this.편집EToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.모두지우기ToolStripMenuItem});
+            this.모두지우기ToolStripMenuItem,
+            this.그리드세부설정SToolStripMenuItem});
             this.편집EToolStripMenuItem.Name = "편집EToolStripMenuItem";
             this.편집EToolStripMenuItem.Size = new System.Drawing.Size(57, 20);
             this.편집EToolStripMenuItem.Text = "편집(&E)";
@@ -506,6 +524,13 @@
             this.모두지우기ToolStripMenuItem.Size = new System.Drawing.Size(194, 22);
             this.모두지우기ToolStripMenuItem.Text = "그리드 모두 지우기(&A)";
             this.모두지우기ToolStripMenuItem.Click += new System.EventHandler(this.모두지우기ToolStripMenuItem_Click);
+            // 
+            // 그리드세부설정SToolStripMenuItem
+            // 
+            this.그리드세부설정SToolStripMenuItem.Name = "그리드세부설정SToolStripMenuItem";
+            this.그리드세부설정SToolStripMenuItem.Size = new System.Drawing.Size(194, 22);
+            this.그리드세부설정SToolStripMenuItem.Text = "세부 그리드 설정(&S)";
+            this.그리드세부설정SToolStripMenuItem.Click += new System.EventHandler(this.그리드세부설정SToolStripMenuItem_Click);
             // 
             // Form1
             // 
@@ -578,6 +603,7 @@
         private System.Windows.Forms.ToolStripMenuItem 모두지우기ToolStripMenuItem;
         private System.Windows.Forms.NumericUpDown numericUpDown4;
         private System.Windows.Forms.NumericUpDown numericUpDown3;
+        private System.Windows.Forms.ToolStripMenuItem 그리드세부설정SToolStripMenuItem;
     }
 }
 
