@@ -25,6 +25,7 @@ namespace GridMakerProject
         private Color cl = Color.Black;                 //기본 색상값
         private Dictionary<Button, Align> alignButtons; //정렬 버튼 컬렉션
         private bool setChange = false;
+        private bool suppressValueChanged= false;
         public Form1()
         {
             InitializeComponent();
@@ -87,7 +88,8 @@ namespace GridMakerProject
 
         private bool isValidData(GridType gridType, Align align) // 유효한 데이터가 올바르게 입력되었는지 확인하는 함수
         {
-            if (int.TryParse(textBox1.Text, out int rows) && int.TryParse(textBox2.Text, out int columns)
+            if (int.TryParse(numericUpDown3.Value.ToString(), out int rows)
+                && int.TryParse(numericUpDown4.Value.ToString(), out int columns)
                 && float.TryParse(numericUpDown1.Value.ToString(), out float lineWeight)
                 && float.TryParse(numericUpDown2.Value.ToString(), out float lineOpacity))
             {
@@ -269,7 +271,15 @@ namespace GridMakerProject
             {
                 return ;
             }
-            textBox2.Text = "0";
+            
+            suppressValueChanged = true;
+
+            numericUpDown3.ValueChanged -= numericUpDown3_ValueChanged;
+            numericUpDown4.ValueChanged -= numericUpDown4_ValueChanged;
+            numericUpDown4.Value = 0;
+            numericUpDown3.ValueChanged += numericUpDown3_ValueChanged;
+            numericUpDown4.ValueChanged += numericUpDown4_ValueChanged;
+            suppressValueChanged = false;
             DrawGrid(GridType.HorizontalLines);
         }
 
@@ -279,7 +289,13 @@ namespace GridMakerProject
             {
                 return ;
             }
-            textBox1.Text = "0";
+            suppressValueChanged = true;
+            numericUpDown3.ValueChanged -= numericUpDown3_ValueChanged;
+            numericUpDown4.ValueChanged -= numericUpDown4_ValueChanged;
+            numericUpDown3.Value = 0;
+            numericUpDown3.ValueChanged += numericUpDown3_ValueChanged;
+            numericUpDown4.ValueChanged += numericUpDown4_ValueChanged;
+            suppressValueChanged = false;
             DrawGrid(GridType.VerticalLines);
         }
 
@@ -289,7 +305,15 @@ namespace GridMakerProject
             {
                 return;
             }
-            drawer.StartDragging(e.Location);
+            if (e.Button == MouseButtons.Right)
+            {
+                drawer.getSubGridLocation(e.Location);
+                pictureBox1.Refresh();
+            }
+            else
+            {
+                drawer.StartDragging(e.Location);
+            }
         }
 
         private void pictureBox1_MouseMove(object sender, MouseEventArgs e) // picturebox에서 마우스 움직이며 드래그시 실행되는 함수
@@ -301,22 +325,25 @@ namespace GridMakerProject
             }
         }
         
-
         private void button8_Click(object sender, EventArgs e) //행 기반 정사각형 그리기 버튼 클릭시 실행되는 함수
         {
             if(!isImageExist())
             {
                 return;
             }
-
-            if (int.TryParse(textBox1.Text,out int rows))
+            
+            try
             {
                 drawer.setImageOffset(this.pictureBox1);
-                int newCols = drawer.CalculateColumnsForRows(rows);
-                textBox2.Text = newCols.ToString();
+                int newCols = drawer.CalculateColumnsForRows((int)numericUpDown3.Value);
+
+                numericUpDown4.ValueChanged -= numericUpDown4_ValueChanged;
+                numericUpDown4.Value = newCols;
+                numericUpDown4.ValueChanged += numericUpDown4_ValueChanged;
+
                 DrawGrid(GridType.Squares, Align.Center);
             }
-            else
+            catch (Exception fe)
             {
                 MessageBox.Show($"행이 존재하지 않습니다.");
             }
@@ -327,15 +354,16 @@ namespace GridMakerProject
             {
                 return;
             }
-
-            if (int.TryParse(textBox2.Text, out int cols))
+            try
             {
                 drawer.setImageOffset(this.pictureBox1);
-                int newRows = drawer.CalculateRowsForColumns(cols);
-                textBox1.Text = newRows.ToString();
+                int newRows = drawer.CalculateRowsForColumns((int)numericUpDown4.Value);
+                numericUpDown3.ValueChanged -= numericUpDown4_ValueChanged;
+                numericUpDown3.Value = newRows;
+                numericUpDown3.ValueChanged += numericUpDown4_ValueChanged;
                 DrawGrid(GridType.Squares, Align.Center);
             }
-            else
+            catch (Exception fe)
             {
                 MessageBox.Show($"열이 존재하지 않습니다.");
             }
@@ -372,7 +400,24 @@ namespace GridMakerProject
             button7.BackColor = cl;
         }
 
-        
+        private void numericUpDown3_ValueChanged(object sender, EventArgs e)
+        {
+            if (suppressValueChanged)
+            {
+                return ;
+            }
+            button8_Click(sender, e);
+        }
+
+        private void numericUpDown4_ValueChanged(object sender, EventArgs e)
+        {
+            if (suppressValueChanged)
+            {
+                return;
+            }
+            button15_Click(sender, e);
+        }
+
     }
     public class GridDrawer 
     /*  실질적으로 그리드를 생성하고 그리는 클래스입니다.
@@ -385,8 +430,8 @@ namespace GridMakerProject
         private PointF gridOffset = new PointF(0, 0);       //이미지 기준 그리드 오프셋
         private PointF gridSize = new PointF(0, 0);         //이미지 내의 그리드 사이즈
         private PointF dragStartPoint;                      //드래그 시작 지점
-        private float dx,dy;
-        private float past_Size = 0; 
+        private float past_Size = 0;                        //이전에 그렸다면, 사이즈를 이곳에 저장
+        private List<Point> clickPoints = new List<Point>();
 
         
 
@@ -394,7 +439,7 @@ namespace GridMakerProject
         {
             this.gridSet = gridSet;
 
-            switch (gridSet.align)
+            switch (gridSet.align) // 그리드 정렬시 grid 중앙을 기준으로 그리드 이동거리 조절
             {
                 case(Align.Left):
                     gridMoveDistance.X = (int)(-((imageSize.X / 2) - (gridSize.X / 2)));
@@ -505,7 +550,7 @@ namespace GridMakerProject
                 float imgRatio = imageSize.X / imageSize.Y;
                 float gridRatio = totalGridWidth / totalGridHeight;
 
-               
+                
                 if(imgRatio > gridRatio)
                 {
                     startX = imageOffset.X + (imageSize.X - totalGridWidth) / 2;
@@ -515,29 +560,30 @@ namespace GridMakerProject
                     startY = imageOffset.Y + (imageSize.Y - totalGridHeight) / 2;
                 }
 
-                if (past_Size == 0 && pb.Tag==null)
+                if (past_Size == 0 && pb.Tag==null) // 이전 사이즈에 대한 정보가 없고, pb.Tag가 null이라면 (저장 picturebox가 아니라면)
                 {
                     startX += gridMoveDistance.X;
                     startY += gridMoveDistance.Y;
                     past_Size = this.imageSize.X;
                 }
-                else if(pb.Tag==null)
+                else if(pb.Tag==null)   // 이전 사이즈에 대한 정보가 있고, 저장 picturebox가 아니라면
                 {
                     float ratio = this.imageSize.X/past_Size;
-                    if (ratio > 0)
+                    if (ratio > 0) // 크기가 늘어났다면 그리드의 이동거리를 늘린다.
                     {
                         gridMoveDistance.X *= ratio;
                         gridMoveDistance.Y *= ratio;
                     }
-                    else
+                    else           // 크기가 줄어들었다면 그리드의 이동거리를 줄인다. 
                     {
                         gridMoveDistance.X /= ratio;
                         gridMoveDistance.Y /= ratio;
                     }
-                    startX += gridMoveDistance.X;
+                    // 늘어난만큼, 줄어든만큼 반영
+                    startX += gridMoveDistance.X; 
                     startY += gridMoveDistance.Y;
                     past_Size = this.imageSize.X;
-                }else if (pb.Tag != null)
+                }else if (pb.Tag != null) // 저장 picturebox라면 그 비율을 구해 곱한다.
                 {
                     float ratio = (float)pb.Tag;
                     if (imgRatio > gridRatio)
@@ -549,9 +595,8 @@ namespace GridMakerProject
                         startY += (gridMoveDistance.Y * ratio);
                     }
                 }
-                // 사용자가 드래그를 하면 계산되는 값입니다. 드래그를 하지 않을 경우 gridMoveDistance 는 0 입니다.
 
-                gridOffset.X = startX;
+                gridOffset.X = startX; // 최종반영
                 gridOffset.Y = startY;
                 gridSize.X = totalGridWidth;
                 gridSize.Y = totalGridHeight;
@@ -565,6 +610,7 @@ namespace GridMakerProject
                 gridOffset.Y = imageOffset.Y;
             }
         }
+ 
 
 
         public void DrawGrid(PaintEventArgs e, GridType gridType,PictureBox pictureBox) 
@@ -582,7 +628,7 @@ namespace GridMakerProject
             if(pictureBox.Tag != null)
             {
                 float ratio = (float)pictureBox.Tag;
-                gridSet.lineWeight *= (ratio*(float)0.3);
+                gridSet.lineWeight *= (ratio*(float)0.2);
             }
             Graphics g = e.Graphics;
             Color transparentColor = Color.FromArgb((int)(gridSet.lineOpacity * 255), gridSet.color);
@@ -649,6 +695,23 @@ namespace GridMakerProject
                     float x = gridOffset.X + col * avgRectSize;
                     float y = gridOffset.Y + row * avgRectSize;
                     g.DrawRectangle(pen, x, y, avgRectSize, avgRectSize);
+
+                    foreach (Point p in clickPoints)
+                    {
+                        if (p.X == row && p.Y == col)
+                        {
+                            for (int row2 = 0; row2 < gridSet.rows; row2++)
+                            {
+                                for (int col2 = 0; col2 < gridSet.columns; col2++)
+                                {
+                                    float x2 = x + col2 * 10;
+                                    float y2 = y + row2 * 10;
+                                    g.DrawRectangle(pen, x2, y2, 10, 10);
+                                }
+                            }
+                        }
+                    }
+
                     // 이전 함수들에서 계산된 오프셋을 가지고 정사각형을 한개한개 그립니다.
                 }
             }
@@ -690,20 +753,15 @@ namespace GridMakerProject
                 return;
             }
 
-            float avgRectSize = Math.Min(imageSize.X / gridSet.columns, imageSize.Y / gridSet.rows);
-            float totalGridWidth = avgRectSize * gridSet.columns;
-            float totalGridHeight = avgRectSize * gridSet.rows;
-            
-
-            dx = currentLocation.X - dragStartPoint.X;
-            dy = currentLocation.Y - dragStartPoint.Y;
+            float dx = currentLocation.X - dragStartPoint.X;
+            float dy = currentLocation.Y - dragStartPoint.Y;
             // 시작 위치에서 움직인 거리를 계산하여 dx,dy에 반영합니다.
             float imgRatio = imageSize.X / imageSize.Y;
             float gridRatio = gridSize.X / gridSize.Y;
 
-            if (imgRatio > gridRatio)
+            if (imgRatio > gridRatio) // 이동거리 초과시 Return
             {
-                float startX = imageOffset.X + (imageSize.X - totalGridWidth) / 2;
+                float startX = imageOffset.X + (imageSize.X - gridSize.X) / 2;
                 if ((int)(startX + gridMoveDistance.X)+dx < (int)(imageOffset.X) ||
                     (int)(startX + gridMoveDistance.X + gridSize.X)+dx > (int)(pictureBox.ClientSize.Width - imageOffset.X))
                 {
@@ -712,7 +770,7 @@ namespace GridMakerProject
             }
             else
             {
-                float startY = imageOffset.Y + (imageSize.Y - totalGridHeight) / 2;
+                float startY = imageOffset.Y + (imageSize.Y - gridSize.Y) / 2;
                 if ((int)(startY + gridMoveDistance.Y)+dy < (int)(imageOffset.Y)||
                     (int)(startY + gridMoveDistance.Y + gridSize.Y)+dy > (int)(pictureBox.ClientSize.Height - imageOffset.Y))
                 {
@@ -736,7 +794,50 @@ namespace GridMakerProject
             pictureBox.Refresh();
             // 그리드를 다시 그리기 위해(드래그 행위를 반영하기 위해) 다시 그려줍니다. (setGridOffset() 함수에서 dx,dy가 반영됨)
         }
-        
+
+        public void getSubGridLocation(Point clickLocation)
+        {
+            if (gridSet == null || gridSet.gridType != GridType.Squares)
+            {
+                return;
+            }
+
+            float avgRectSize = Math.Min(imageSize.X / gridSet.columns, imageSize.Y / gridSet.rows);
+            // 정사각형 그리드에 표현되는 한개의 정사각형 사이즈를 계산합니다.
+            for (int row = 0; row < gridSet.rows; row++)
+            {
+                for (int col = 0; col < gridSet.columns; col++)
+                {
+                    float x = gridOffset.X + col * avgRectSize;
+                    float y = gridOffset.Y + row * avgRectSize;
+                    if (clickLocation.X > x && clickLocation.X < x+avgRectSize
+                        && clickLocation.Y >y && clickLocation.Y < y + avgRectSize)
+                    {
+                        Point newPoint = new Point(row, col);
+                        bool pointExists = false;
+
+                        foreach (Point p in clickPoints)
+                        {
+                            if (p.X == newPoint.X && p.Y == newPoint.Y)
+                            {
+                                pointExists = true;
+                                break;
+                            }
+                        }
+
+                        if (!pointExists)
+                        {
+                            clickPoints.Add(newPoint);
+                        }
+                        else
+                        {
+                            clickPoints.RemoveAll(p => p.X == newPoint.X && p.Y == newPoint.Y);
+                        }
+                    }
+                }
+            }
+        }
+
         public void CaptureGrid(string path, PictureBox saveBox, PictureBox drawBox) // 그리드 부분만 파일로 출력해주는 함수
         {
             GridSetting gS = this.gridSet;
