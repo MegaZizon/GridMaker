@@ -81,11 +81,11 @@
             // checkBox1
             // 
             this.checkBox1.AutoSize = true;
-            this.checkBox1.Location = new System.Drawing.Point(9, 16);
+            this.checkBox1.Location = new System.Drawing.Point(6, 16);
             this.checkBox1.Name = "checkBox1";
-            this.checkBox1.Size = new System.Drawing.Size(212, 16);
+            this.checkBox1.Size = new System.Drawing.Size(156, 16);
             this.checkBox1.TabIndex = 17;
-            this.checkBox1.Text = "모든 우클릭에 대해 같은 설정 적용";
+            this.checkBox1.Text = "항상 위와 같게 설정하기";
             this.checkBox1.UseVisualStyleBackColor = true;
             // 
             // button2_1

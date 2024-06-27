@@ -28,7 +28,7 @@ namespace GridMakerProject
                 numericUpDown2_4.Value = gS.rows;
                 cl2=gS.color;
                 numericUpDown2_1.Value = (decimal)gS.lineWeight;
-                numericUpDown2_2.Value = (decimal)gS.lineOpacity;
+                numericUpDown2_2.Value = (decimal)gS.lineOpacity*100;
             }
         }
 
