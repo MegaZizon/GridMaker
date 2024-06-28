@@ -27,10 +27,11 @@
 
 ## 🚩 구현 결과
 
-#### 메인 페이지
+#### 초기 화면
 
 
-![image](https://github.com/MegaZizon/SangChuMarket/assets/105596059/7a484bd3-a125-4685-8ee9-ad183203a237)
+![image](https://github.com/MegaZizon/GridMaker/assets/105596059/ac8320e2-2adc-4d4f-aee7-8235fa9dd319)
+
 
 
 <details><summary><h4>로그인 팝업창</h4> </summary>
