@@ -38,7 +38,8 @@
 
 <!-- summary 아래 한칸 공백 두어야함 -->
 
-![image](https://github.com/MegaZizon/GridMaker/assets/105596059/f3bcb587-acaf-4b9e-b853-946c16e0d77e)
+![image](https://github.com/MegaZizon/GridMaker/assets/105596059/73e83cff-28c1-4d58-9ab5-1eef39005383)
+
 
 
 
