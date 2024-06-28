@@ -65,3 +65,11 @@
 ![image](https://github.com/MegaZizon/GridMaker/assets/105596059/b96f8245-1132-4be6-9be1-e1198f1f8057)
 
 </details>
+
+<details><summary><h4>임의의 위치로 드래그</h4> </summary>
+
+<!-- summary 아래 한칸 공백 두어야함 -->
+
+![image](https://github.com/MegaZizon/GridMaker/assets/105596059/5f80f48a-02ec-4c6c-ad8f-06a637b2b119)
+
+</details>
