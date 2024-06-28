@@ -38,10 +38,7 @@
 
 <!-- summary 아래 한칸 공백 두어야함 -->
 
-![image](https://github.com/MegaZizon/GridMaker/assets/105596059/73e83cff-28c1-4d58-9ab5-1eef39005383)
-
-
-
+![image](https://github.com/MegaZizon/GridMaker/assets/105596059/893f3b62-f703-4db8-ad1c-aae785562585)
 
 </details>
 
@@ -51,4 +48,20 @@
 
 ![image](https://github.com/MegaZizon/GridMaker/assets/105596059/46cea258-1076-4aa2-9ef3-335a680e0de7)
 
+</details>
 
+<details><summary><h4>좌측 정렬</h4> </summary>
+
+<!-- summary 아래 한칸 공백 두어야함 -->
+
+![image](https://github.com/MegaZizon/GridMaker/assets/105596059/10c797f8-3baf-4980-bf7d-70533e7dc5ad)
+
+</details>
+
+<details><summary><h4>크기 설정 및 우측정렬, 상단정렬</h4> </summary>
+
+<!-- summary 아래 한칸 공백 두어야함 -->
+
+![image](https://github.com/MegaZizon/GridMaker/assets/105596059/b96f8245-1132-4be6-9be1-e1198f1f8057)
+
+</details>
