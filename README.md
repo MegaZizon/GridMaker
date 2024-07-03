@@ -13,6 +13,7 @@
 - **IDE** : Microsoft Visual Studio 2022 
 
 ## 📌 주요 기능
+#### - 파일 입출력 기능
 #### - 행렬 기반 정사각형 자동맞춤 기능
 #### - 행 × 열 정사각형, 직사각형 그리드 생성 기능
 #### - 수직선, 수평선 그리기 기능
@@ -70,3 +71,13 @@
 ![image](https://github.com/MegaZizon/GridMaker/assets/105596059/5f80f48a-02ec-4c6c-ad8f-06a637b2b119)
 
 </details>
+
+<details><summary><h4>파일로 출력</h4> </summary>
+
+<!-- summary 아래 한칸 공백 두어야함 -->
+
+![ffa](https://github.com/MegaZizon/GridMaker/assets/105596059/469ff70b-4a84-4f45-b4b3-5b252af30463)
+
+
+</details>
+
